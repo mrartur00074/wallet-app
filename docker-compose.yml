@@ -1,0 +1,17 @@
+version: '1.0'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: spring_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: wallet-app
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
