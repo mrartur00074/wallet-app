@@ -1,5 +1,6 @@
 package com.example.walletapp.model;
 
+import com.example.walletapp.exception.InsufficientFundsException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Wallet {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    // @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)
@@ -43,5 +44,16 @@ public class Wallet {
     @Override
     public String toString() {
         return "Wallet(id=" + id + ", balance=" + balance + ")";
+    }
+
+    public void deposit(Long amount) {
+        this.balance = this.balance + amount;
+    }
+
+    public void withdraw(Long amount) {
+        if (amount < 0) {
+            throw new InsufficientFundsException(this.id, amount);
+        }
+        this.balance = this.balance - amount;
     }
 }

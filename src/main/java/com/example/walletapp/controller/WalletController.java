@@ -1,6 +1,7 @@
 package com.example.walletapp.controller;
 
 import com.example.walletapp.dto.request.WalletRequest;
+import com.example.walletapp.dto.response.WalletResponse;
 import com.example.walletapp.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,15 +17,15 @@ public class WalletController {
     private final WalletService walletService;
 
     @PostMapping("/wallet")
-    public ResponseEntity<Void> processOperation(
+    public ResponseEntity<WalletResponse> processOperation(
             @Valid @RequestBody WalletRequest request
     ) {
-        walletService.processOperation(request);
-        return ResponseEntity.ok().build();
+
+        return ResponseEntity.ok(walletService.processOperation(request));
     }
 
-    @GetMapping("/{WALLET_UUID}")
-    public ResponseEntity<Long> getBalance(@PathVariable UUID WALLET_UUID) {
+    @GetMapping("/wallets/{WALLET_UUID}")
+    public ResponseEntity<WalletResponse> getBalance(@PathVariable UUID WALLET_UUID) {
         return ResponseEntity.ok(walletService.getBalance(WALLET_UUID));
     }
 }
