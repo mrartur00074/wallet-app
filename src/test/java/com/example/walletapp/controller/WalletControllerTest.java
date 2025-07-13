@@ -1,51 +1,167 @@
 package com.example.walletapp.controller;
 
+import com.example.walletapp.dto.request.WalletRequest;
+import com.example.walletapp.dto.response.WalletResponse;
+import com.example.walletapp.exception.*;
+import com.example.walletapp.service.WalletService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
 public class WalletControllerTest {
 
-    @Autowired
+    @Mock
+    private WalletService walletService;
+
     private MockMvc mockMvc;
 
-    @Test
-    void deposit_ShouldIncreaseBalance() throws Exception {
-        String requestJson = """
-            {
-                "walletId": "11111111-1111-1111-1111-111111111111",
-                "operationType": "DEPOSIT",
-                "amount": 1000
-            }""";
+    @InjectMocks
+    private WalletController walletController;
 
-        mockMvc.perform(post("/wallet")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balance").value(1000));
+    private UUID testWalletId;
+    private WalletRequest validDepositRequest;
+    private WalletRequest validWithdrawRequest;
+    private WalletRequest invalidOperationRequest;
+    private WalletResponse successResponse;
+
+    @BeforeEach
+    void setUp() {
+        testWalletId = UUID.randomUUID();
+
+        validDepositRequest = new WalletRequest();
+        validDepositRequest.setWalletId(testWalletId);
+        validDepositRequest.setOperationType("DEPOSIT");
+        validDepositRequest.setAmount(1000L);
+
+        validWithdrawRequest = new WalletRequest();
+        validWithdrawRequest.setWalletId(testWalletId);
+        validWithdrawRequest.setOperationType("WITHDRAW");
+        validWithdrawRequest.setAmount(500L);
+
+        invalidOperationRequest = new WalletRequest();
+        invalidOperationRequest.setWalletId(testWalletId);
+        invalidOperationRequest.setOperationType("UNKNOWN");
+        invalidOperationRequest.setAmount(100L);
+
+        successResponse = new WalletResponse(testWalletId, 1500L);
+        mockMvc = MockMvcBuilders.standaloneSetup(walletController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
-    void invalidOperationType_ShouldReturnBadRequest() throws Exception {
-        String invalidRequest = """
-            {
-                "walletId": "11111111-1111-1111-1111-111111111111",
-                "operationType": "DEPOSIT1",
-                "amount": 100
-            }""";
+    void processOperation_Deposit_ShouldReturnOk() {
+        when(walletService.processOperation(validDepositRequest)).thenReturn(successResponse);
 
-        mockMvc.perform(post("/wallet")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidRequest))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("INVALID_OPERATION_TYPE"));
+        ResponseEntity<WalletResponse> response = walletController.processOperation(validDepositRequest);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(successResponse, response.getBody());
+        verify(walletService, times(1)).processOperation(validDepositRequest);
+    }
+
+    @Test
+    void processOperation_Withdraw_ShouldReturnOk() {
+        when(walletService.processOperation(validWithdrawRequest)).thenReturn(successResponse);
+
+        ResponseEntity<WalletResponse> response = walletController.processOperation(validWithdrawRequest);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(successResponse, response.getBody());
+        verify(walletService, times(1)).processOperation(validWithdrawRequest);
+    }
+
+    @Test
+    void processOperation_WalletNotFound_ShouldThrow() {
+        when(walletService.processOperation(any(WalletRequest.class)))
+                .thenThrow(new WalletNotFoundException(testWalletId));
+
+        assertThrows(WalletNotFoundException.class, () -> {
+            walletController.processOperation(validDepositRequest);
+        });
+    }
+
+    @Test
+    void processOperation_InsufficientFunds_ShouldThrow() {
+        when(walletService.processOperation(any(WalletRequest.class)))
+                .thenThrow(new InsufficientFundsException(testWalletId, 10000000L));
+
+        assertThrows(InsufficientFundsException.class, () -> {
+            walletController.processOperation(validWithdrawRequest);
+        });
+    }
+
+    @Test
+    void processOperation_InvalidOperation_ShouldThrow() {
+        when(walletService.processOperation(invalidOperationRequest))
+                .thenThrow(new InvalidOperationException("Неизвестная операция"));
+
+        assertThrows(InvalidOperationException.class, () -> {
+            walletController.processOperation(invalidOperationRequest);
+        });
+    }
+
+    @Test
+    void processOperation_OperationConflict_ShouldThrow() {
+        when(walletService.processOperation(any(WalletRequest.class)))
+                .thenThrow(new OperationConflictException("Не удалось выполнить операцию после 3 попыток"));
+
+        assertThrows(OperationConflictException.class, () -> {
+            walletController.processOperation(validDepositRequest);
+        });
+    }
+
+    @Test
+    void getBalance_ValidWallet_ShouldReturnOk() {
+        when(walletService.getBalance(testWalletId)).thenReturn(successResponse);
+
+        ResponseEntity<WalletResponse> response = walletController.getBalance(testWalletId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(successResponse, response.getBody());
+        verify(walletService, times(1)).getBalance(testWalletId);
+    }
+
+    @Test
+    void getBalance_WalletNotFound_ShouldThrow() {
+        when(walletService.getBalance(testWalletId))
+                .thenThrow(new WalletNotFoundException(testWalletId));
+
+        assertThrows(WalletNotFoundException.class, () -> {
+            walletController.getBalance(testWalletId);
+        });
+    }
+
+    @Test
+    void getBalance_InvalidUUID_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/wallets/invalid_uuid"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getBalance_ValidUUID_ShouldCallService() throws Exception {
+        UUID validUUID = UUID.randomUUID();
+        when(walletService.getBalance(validUUID)).thenReturn(new WalletResponse(validUUID, 100L));
+
+        mockMvc.perform(get("/api/v1/wallets/" + validUUID))
+                .andExpect(status().isOk());
+
+        verify(walletService).getBalance(validUUID);
     }
 }

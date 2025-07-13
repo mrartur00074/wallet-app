@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-balance-constraint
+      author: mrartur0074
+      changes:
+        - sql:
+            sql: ALTER TABLE wallets ADD CONSTRAINT ck_wallet_balance_non_negative CHECK (balance >= 0)

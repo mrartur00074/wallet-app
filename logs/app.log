@@ -1,0 +1,37 @@
+2025-07-13 20:09:38 [main] INFO  c.e.walletapp.WalletAppApplication - Starting WalletAppApplication using Java 17.0.15 with PID 20508 (C:\Users\User\Desktop\projects\wallet-app\build\classes\java\main started by User in C:\Users\User\Desktop\projects\wallet-app)
+2025-07-13 20:09:38 [main] INFO  c.e.walletapp.WalletAppApplication - No active profile set, falling back to 1 default profile: "default"
+2025-07-13 20:09:40 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-07-13 20:09:40 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.42]
+2025-07-13 20:09:40 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-07-13 20:09:40 [main] INFO  liquibase.changelog - Reading from public.databasechangelog
+2025-07-13 20:09:40 [main] INFO  liquibase.ui - Database is up to date, no changesets to execute
+2025-07-13 20:09:40 [main] INFO  liquibase.changelog - Reading from public.databasechangelog
+2025-07-13 20:09:40 [main] INFO  liquibase.util - UPDATE SUMMARY
+2025-07-13 20:09:40 [main] INFO  liquibase.util - Run:                          0
+2025-07-13 20:09:40 [main] INFO  liquibase.util - Previously run:               2
+2025-07-13 20:09:40 [main] INFO  liquibase.util - Filtered out:                 0
+2025-07-13 20:09:40 [main] INFO  liquibase.util - -------------------------------
+2025-07-13 20:09:40 [main] INFO  liquibase.util - Total change sets:            2
+2025-07-13 20:09:40 [main] INFO  liquibase.util - Update summary generated
+2025-07-13 20:09:40 [main] INFO  liquibase.command - Command execution complete
+2025-07-13 20:09:41 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-13 20:09:41 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.18.Final
+2025-07-13 20:09:41 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-13 20:09:41 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-13 20:09:41 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6d4d0a14
+2025-07-13 20:09:41 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-13 20:09:41 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-07-13 20:09:41 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.5
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-07-13 20:09:42 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-13 20:09:42 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-07-13 20:09:42 [main] INFO  c.e.walletapp.WalletAppApplication - Started WalletAppApplication in 4.135 seconds (process running for 4.432)
+2025-07-13 20:09:46 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-07-13 20:09:46 [http-nio-8080-exec-1] DEBUG c.e.w.service.Impl.WalletServiceImpl - Запрос баланса для кошелька: 11111111-1111-1111-1111-111111111111
+2025-07-13 20:09:46 [http-nio-8080-exec-1] INFO  c.e.w.service.Impl.WalletServiceImpl - Текущий баланс кошелька 11111111-1111-1111-1111-111111111111: 1000
