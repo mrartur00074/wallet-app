@@ -3,20 +3,47 @@ version: '1.0'
 services:
   postgres:
     image: postgres:15
-    container_name: spring_postgres
+    container_name: wallet_postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: wallet-app
-    ports:
-      - "15432:5432"
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - wallet-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wallet_backend
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_LIQUIBASE_ENABLED=${SPRING_LIQUIBASE_ENABLED}
+      - DB_POOL_SIZE=${DB_POOL_SIZE}
+      - DB_POOL_MIN_IDLE=${DB_POOL_MIN_IDLE}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      - SPRING_JPA_SHOW_SQL=${SPRING_JPA_SHOW_SQL}
+      - LOG_LEVEL_SPRING=${LOG_LEVEL_SPRING}
+      - LOG_LEVEL_APP=${LOG_LEVEL_APP}
+      - LOG_FILE=${LOG_FILE}
+    ports:
+      - "${APP_PORT}:8080"
+    depends_on:
+      - postgres
+    networks:
+      - wallet-network
 
 volumes:
   postgres_data:
 
 networks:
-  app-network:
+  wallet-network:
