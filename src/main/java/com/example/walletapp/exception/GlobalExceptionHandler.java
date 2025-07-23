@@ -72,12 +72,10 @@ public class GlobalExceptionHandler {
     private HttpStatus determineHttpStatus(WalletException ex) {
         if (ex instanceof WalletNotFoundException) {
             return HttpStatus.NOT_FOUND;
-        } else if (ex instanceof InsufficientFundsException) {
-            return HttpStatus.BAD_REQUEST;
         } else if (ex instanceof InvalidOperationException) {
             return HttpStatus.UNPROCESSABLE_ENTITY;
         }
-        return HttpStatus.INTERNAL_SERVER_ERROR;
+        return HttpStatus.BAD_REQUEST;
     }
 
     private String getErrorCode(WalletException ex) {

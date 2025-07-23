@@ -7,4 +7,5 @@
 
     <include file="db/changelog/changes/001-initial-schema.yaml"/>
     <include file="db/changelog/changes/002-add-constraints.yaml"/>
+    <include file="db/changelog/changes/003-wallet_transactions.yaml"/>
 </databaseChangeLog>

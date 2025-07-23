@@ -1,5 +1,6 @@
 package com.example.walletapp.service.Impl;
 
+import com.example.walletapp.dto.kafka.WalletOperationMessage;
 import com.example.walletapp.dto.request.WalletRequest;
 import com.example.walletapp.dto.response.WalletResponse;
 import com.example.walletapp.exception.InvalidOperationException;
@@ -24,79 +25,27 @@ import java.util.UUID;
 public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
-    public WalletResponse processOperation(WalletRequest request) {
-        log.info("Начало обработки операции: {}", request);
-        int retryCount = 0;
-        while (retryCount < 3) {
-            try {
-                log.debug("Попытка {} для операции {}", retryCount + 1, request.getOperationType());
-                Wallet wallet = walletRepository.findByIdWithLock(request.getWalletId())
-                        .orElseThrow(() -> {
-                            log.error("Кошелек не найден: {}", request.getWalletId());
-                            return new WalletNotFoundException(request.getWalletId());
-                        });
+    @Transactional
+    public void processOperation(WalletOperationMessage request) {
+        Wallet wallet = walletRepository.findById(request.getWalletId())
+                .orElseThrow(() -> new WalletNotFoundException(request.getWalletId()));
 
-                log.debug("Текущий баланс кошелька {}: {}", wallet.getId(), wallet.getBalance());
-
-                switch (request.getOperationType()) {
-                    case "DEPOSIT":
-                        log.debug("Пополнение на сумму: {}", request.getAmount());
-                        wallet.deposit(request.getAmount());
-                        break;
-                    case "WITHDRAW":
-                        log.debug("Списание суммы: {}", request.getAmount());
-                        wallet.withdraw(request.getAmount());
-                        break;
-                    default:
-                        log.error("Неизвестный тип операции: {}", request.getOperationType());
-                        throw new InvalidOperationException("Неизвестная операция");
-                }
-
-                walletRepository.save(wallet);
-                log.info("Успешное выполнение операции. Новый баланс: {}", wallet.getBalance());
-                return new WalletResponse(wallet.getId(), wallet.getBalance());
-            } catch (ObjectOptimisticLockingFailureException | PessimisticLockingFailureException ex) {
-                retryCount++;
-                log.warn("Конфликт блокировки (попытка {}). Ошибка: {}", retryCount, ex.getMessage());
-                if (retryCount == 3) {
-                    log.error("Достигнуто максимальное количество попыток (3) для операции {}", request);
-                    throw new OperationConflictException("Не удалось выполнить операцию после 3 попыток");
-                }
-                log.error("Недопустимое состояние после обработки операции: {}", request);
-                sleepExponentially(retryCount);
-            }
+        switch (request.getOperationType()) {
+            case "DEPOSIT":
+                wallet.deposit(request.getAmount());
+                break;
+            case "WITHDRAW":
+                wallet.withdraw(request.getAmount());
+                break;
+            default:
+                throw new InvalidOperationException("Неизвестная операция");
         }
-
-        throw new IllegalStateException("Недопустимое состояние");
-    }
-
-    private void sleepExponentially(int retryCount) {
-        long sleepTime = (long) Math.pow(2, retryCount) * 50;
-        log.debug("Ожидание перед повторной попыткой: {} мс", sleepTime);
-        try {
-            Thread.sleep(sleepTime);
-        } catch (InterruptedException ignored) {
-            log.warn("Прерывание во время ожидания повторной попытки");
-            Thread.currentThread().interrupt();
-        }
+        walletRepository.save(wallet);
     }
 
     public WalletResponse getBalance(UUID walletId) {
-        log.debug("Запрос баланса для кошелька: {}", walletId);
-
-        if (walletId == null) {
-            log.error("Получен пустой walletId");
-            throw new IllegalArgumentException("Wallet UUID пустой");
-        }
-
         Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> {
-                    log.error("Кошелек не найден: {}", walletId);
-                    return new WalletNotFoundException(walletId);
-                });
-
-        log.info("Текущий баланс кошелька {}: {}", walletId, wallet.getBalance());
+                .orElseThrow(() -> new WalletNotFoundException(walletId));
         return new WalletResponse(wallet.getId(), wallet.getBalance());
     }
 }
